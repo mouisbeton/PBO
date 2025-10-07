@@ -19,7 +19,7 @@ import java.util.Map;
      responses.put("restart", "Sudahkah Anda mencoba mematikan dan menyalakan kembali perangkat?");
      responses.put("update", "Apakah masalah terjadi setelah pembaruan (update)?");
      responses.put("mati", "Apakah perangkat Anda mati total? Coba periksa kabel daya.");
-     responses.put("halo", "Halo! adakah yang bisa saaya bantu?");
+     responses.put("halo", "Halo! adakah yang bisa saya bantu?");
 
      synonymMap.put("salah", "error");
      synonymMap.put("kesalahan", "error");
