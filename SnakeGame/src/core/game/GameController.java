@@ -31,7 +31,8 @@ public class GameController {
         }
     }
     
-    public GameController(List<Player> playerList, GameBoard gameBoard) {        this.players = new ArrayList<>(playerList);
+    public GameController(List<Player> playerList, GameBoard gameBoard) {        
+        this.players = new ArrayList<>(playerList);
         this.board = gameBoard;
         this.dice = new Dice();
         this.currentPlayerIndex = 0;
