@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
 import core.game.*;
@@ -15,10 +16,18 @@ public class GUIGameScreen extends GUIScreen {
     private GameBoard board;
     private List<Player> players;
     private Player winner;
-    private GUIResultScreen nextScreen;    private boolean gameEnded = false;
+    private GUIResultScreen nextScreen;
+    private boolean gameEnded = false;
     private boolean requestingMenuReturn = false;
-    
-    public GUIGameScreen(SpriteBatch batch, BitmapFont font, List<String> playerNames) {
+    private Texture gridTexture;
+    private Texture[] playerTextures;    private Texture[] diceTextures;
+    private int displayedDiceValue = 0;
+    private float diceRollAnimationTimer = 0;
+    private final float DICE_ANIMATION_DURATION = 1.5f;
+    private float diceChangeDelay = 0;
+    private final float DICE_CHANGE_INTERVAL = 0.1f;
+    private boolean isShowingDiceRoll = false;
+      public GUIGameScreen(SpriteBatch batch, BitmapFont font, List<String> playerNames) {
         super(batch, font);
         this.board = new GameBoard();
         this.players = new java.util.ArrayList<>();
@@ -28,9 +37,19 @@ public class GUIGameScreen extends GUIScreen {
         }
         
         this.controller = new GameController(players, board);
-    }
-
-    @Override
+        this.gridTexture = new Texture("assets/grid.png");
+        
+        this.playerTextures = new Texture[4];
+        playerTextures[0] = new Texture("assets/player_1.png");
+        playerTextures[1] = new Texture("assets/player_2.png");
+        playerTextures[2] = new Texture("assets/player_3.png");
+        playerTextures[3] = new Texture("assets/player_4.png");
+        
+        this.diceTextures = new Texture[6];
+        for (int i = 0; i < 6; i++) {
+            diceTextures[i] = new Texture("assets/dice_" + (i + 1) + ".png");
+        }
+    }    @Override
     public void render(float delta) {
         Gdx.gl.glClearColor(0.05f, 0.05f, 0.15f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -39,12 +58,17 @@ public class GUIGameScreen extends GUIScreen {
         
         boolean animationComplete = controller.updateAnimation(delta);
         
+        if (isShowingDiceRoll) {
+            updateDiceRollAnimation(delta);
+        }
+        
         renderBoard();
         renderPlayers();
+        renderDice();
         
         renderGameInfo();
         
-        if (!gameEnded && !controller.isAnimating()) {
+        if (!gameEnded && !controller.isAnimating() && !isShowingDiceRoll) {
             handleInput();
         }
         
@@ -54,6 +78,36 @@ public class GUIGameScreen extends GUIScreen {
             renderGameOver();
         }
           batch.end();
+    }
+      private void updateDiceRollAnimation(float delta) {
+        diceRollAnimationTimer += delta;
+        diceChangeDelay += delta;
+        
+        if (diceRollAnimationTimer < DICE_ANIMATION_DURATION) {
+            if (diceChangeDelay >= DICE_CHANGE_INTERVAL) {
+                int randomDice = (int) (Math.random() * 6);
+                displayedDiceValue = randomDice + 1;
+                diceChangeDelay = 0;
+            }
+        } else {
+            isShowingDiceRoll = false;
+            diceRollAnimationTimer = 0;
+            diceChangeDelay = 0;
+        }
+    }    private void renderDice() {
+        if (displayedDiceValue > 0 && displayedDiceValue <= 6) {
+            float diceX = 775;
+            float diceY = 20;
+            float diceSize = 120;
+            
+            Texture diceTex = diceTextures[displayedDiceValue - 1];
+            batch.draw(diceTex, diceX, diceY, diceSize, diceSize);
+            
+            if (isShowingDiceRoll) {
+                font.setColor(1, 1, 0, 1);
+                font.draw(batch, "Rolling...", diceX - 30, diceY + 130);
+            }
+        }
     }
 
     private void renderGameInfo() {
@@ -98,9 +152,7 @@ public class GUIGameScreen extends GUIScreen {
         font.setColor(1, 0, 1, 1);
         infoY -= 80;
         font.draw(batch, "Press R to", infoX, infoY);        font.draw(batch, "return to menu", infoX, infoY - 30);
-    }
-
-    private void renderBoard() {
+    }    private void renderBoard() {
         font.setColor(1, 1, 1, 1);
         font.draw(batch, "SNAKES AND LADDERS", 50, screenHeight - 30);
         
@@ -108,52 +160,55 @@ public class GUIGameScreen extends GUIScreen {
         int boardStartX = 50;
         int boardStartY = screenHeight - 100;
         
-        for (int i = 1; i <= 100; i++) {
-            int row = (i - 1) / 10;
-            int col = (i - 1) % 10;
-            
-            int x = boardStartX + (col * tileSize);
-            int y = boardStartY - (row * tileSize);
-            
-            if (board.hasSpecialTile(i)) {
-                SpecialTile tile = board.getSpecialTile(i);
-                if (tile instanceof Snake) {
-                    font.setColor(1, 0, 0, 1);
-                } else {
-                    font.setColor(0, 1, 0, 1);
-                }
-            } else {
-                font.setColor(1, 1, 1, 1);
-            }
-            
-            String num = i < 10 ? " " + i : String.valueOf(i);            font.draw(batch, num, x + 15, y - 15);
+        if (gridTexture != null) {
+            batch.draw(gridTexture, boardStartX, boardStartY - 600, 600, 600);
         }
-    }
-
-    private void renderPlayers() {
+    }private void renderPlayers() {
         int tileSize = 60;
         int boardStartX = 50;
         int boardStartY = screenHeight - 100;
         
-        Color[] colors = {
-            new Color(1, 0, 0, 1),
-            new Color(0, 1, 0, 1),
-            new Color(0, 0, 1, 1),
-            new Color(1, 1, 0, 1)
-        };
-        
+        java.util.Map<Integer, java.util.List<Integer>> playersPerTile = new java.util.HashMap<>();
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             int pos = p.getPosition();
+            playersPerTile.computeIfAbsent(pos, k -> new java.util.ArrayList<>()).add(i);
+        }        for (java.util.Map.Entry<Integer, java.util.List<Integer>> entry : playersPerTile.entrySet()) {
+            int pos = entry.getKey();
+            java.util.List<Integer> playerIndices = entry.getValue();
             
             int row = (pos - 1) / 10;
-            int col = (pos - 1) % 10;
+            int colInRow = (pos - 1) % 10;
             
-            int x = boardStartX + (col * tileSize) + 20;
-            int y = boardStartY - (row * tileSize) - 25;
+            int col = (row % 2 == 0) ? (9 - colInRow) : colInRow;
             
-            font.setColor(colors[i]);
-            font.draw(batch, p.getName().charAt(0) + "", x, y);
+            int baseTileX = boardStartX + (col * tileSize);
+            int baseTileY = boardStartY - (row * tileSize);
+            
+            int playersOnTile = playerIndices.size();
+            float spriteSize;
+            float spacing;
+            
+            if (playersOnTile == 1) {
+                spriteSize = 40;
+                spacing = 0;
+            } else if (playersOnTile == 2) {
+                spriteSize = 24;
+                spacing = 6;
+            } else {
+                spriteSize = 18;
+                spacing = 4;
+            }
+            
+            float totalWidth = (playersOnTile * spriteSize) + ((playersOnTile - 1) * spacing);
+            float startX = baseTileX + (tileSize - totalWidth) / 2;
+            float startY = baseTileY - spriteSize - 5;
+            
+            for (int i = 0; i < playerIndices.size(); i++) {
+                int playerIdx = playerIndices.get(i);
+                float x = startX + (i * (spriteSize + spacing));
+                batch.draw(playerTextures[playerIdx], x, startY, spriteSize, spriteSize);
+            }
         }
     }
 
@@ -161,11 +216,11 @@ public class GUIGameScreen extends GUIScreen {
         font.setColor(1, 0, 0, 1);
         font.draw(batch, "GAME OVER!", screenWidth / 2 - 100, screenHeight / 2 + 50);
         font.draw(batch, "Winner: " + winner.getName(), screenWidth / 2 - 150, screenHeight / 2);        font.draw(batch, "Press SPACE to exit", screenWidth / 2 - 150, screenHeight / 2 - 50);
-    }
-
-    private void handleInput() {
+    }    private void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             if (!gameEnded) {
+                isShowingDiceRoll = true;
+                diceRollAnimationTimer = 0;
                 controller.startAnimatedTurn();
             }
         }
@@ -193,10 +248,28 @@ public class GUIGameScreen extends GUIScreen {
         
         return null;
     }
-    
-    @Override
+      @Override
     public void resize(int width, int height) {
         this.screenWidth = width;
         this.screenHeight = height;
+    }    @Override
+    public void dispose() {
+        if (gridTexture != null) {
+            gridTexture.dispose();
+        }
+        if (playerTextures != null) {
+            for (Texture texture : playerTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+        }
+        if (diceTextures != null) {
+            for (Texture texture : diceTextures) {
+                if (texture != null) {
+                    texture.dispose();
+                }
+            }
+        }
     }
 }

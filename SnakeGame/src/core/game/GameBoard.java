@@ -10,28 +10,19 @@ public class GameBoard {
         this.specialTiles = new HashMap<>();
         loadSnakes();
         loadLadders();
-    }
+    }    
     
     private void loadSnakes() {
-        addSnake(17, 7);
-        addSnake(54, 34);
-        addSnake(62, 19);
-        addSnake(64, 60);
-        addSnake(87, 24);
-        addSnake(93, 73);
-        addSnake(95, 75);
-        addSnake(99, 9);
+        addSnake(99, 2);
+        addSnake(53, 28);
+        addSnake(89, 52);
     }
     
     private void loadLadders() {
-        addLadder(3, 22);
-        addLadder(5, 8);
-        addLadder(11, 28);
-        addLadder(20, 38);
-        addLadder(27, 83);
-        addLadder(36, 44);
-        addLadder(51, 67);
-        addLadder(71, 91);
+        addLadder(6, 15);
+        addLadder(37, 84);
+        addLadder(54, 74);
+        addLadder(71, 90);
     }
     
     private void addSnake(int from, int to) {

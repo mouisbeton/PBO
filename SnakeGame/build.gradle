@@ -28,6 +28,9 @@ sourceSets {
         java {
             srcDirs = ['src']
         }
+        resources {
+            srcDirs = ['src']
+        }
     }
     test {
         java {
@@ -43,6 +46,7 @@ test {
 task runGame(type: JavaExec) {
     classpath = sourceSets.main.runtimeClasspath
     mainClass = "DesktopLauncher"
+    workingDir = rootProject.projectDir
 }
 
 jar {
@@ -57,6 +61,8 @@ jar {
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
+    
+    from 'src/assets'
     
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     

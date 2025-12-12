@@ -47,8 +47,7 @@ public class GameController {
     public TurnResult executeTurn() {
         return nextTurn();
     }
-    
-    public TurnResult nextTurn() {
+      public TurnResult nextTurn() {
         if (gameOver) {
             throw new IllegalStateException("Game is already over!");
         }
@@ -80,7 +79,7 @@ public class GameController {
             currentPlayer,
             diceValue,
             previousPosition,
-            positionAfterMove,
+            finalPosition,
             finalPosition,
             specialTile,
             isWinning
@@ -111,8 +110,7 @@ public class GameController {
 
     public int getCurrentPlayerIndex() {
         return currentPlayerIndex;
-    }    
-    public void applySpecialTileEffects() {
+    }      public void applySpecialTileEffects() {
         Player currentPlayer = getCurrentPlayer();
         int currentPos = currentPlayer.getPosition();
         
@@ -120,11 +118,6 @@ public class GameController {
             SpecialTile specialTile = board.getSpecialTile(currentPos);
             int finalPosition = specialTile.applyEffect(currentPos);
             currentPlayer.teleport(finalPosition);
-        }
-        
-        if (currentPlayer.isWinner()) {
-            gameOver = true;
-            winner = currentPlayer;
         }
         
         if (!gameOver) {
@@ -155,9 +148,7 @@ public class GameController {
         remainingMoves = diceValue;
         animationTimer = ANIMATION_DELAY;
         isAnimating = true;
-    }
-    
-    public boolean updateAnimation(float delta) {
+    }    public boolean updateAnimation(float delta) {
         if (!isAnimating || animatingPlayer == null) {
             return true;
         }
@@ -165,16 +156,24 @@ public class GameController {
         animationTimer -= delta;
         if (animationTimer <= 0) {
             int currentPos = animatingPlayer.getPosition();
-            if (currentPos < 100) {
-                animatingPlayer.setPosition(currentPos + 1);
-                remainingMoves--;
-                
-                if (remainingMoves <= 0) {
-                    completeAnimation();
-                    return true;
-                } else {
-                    animationTimer = ANIMATION_DELAY;
-                }
+            int nextPos = currentPos + 1;
+            
+            if (nextPos > 100) {
+                gameOver = true;
+                winner = animatingPlayer;
+                animatingPlayer = null;
+                isAnimating = false;
+                return true;
+            }
+            
+            animatingPlayer.setPosition(nextPos);
+            remainingMoves--;
+            
+            if (remainingMoves <= 0) {
+                completeAnimation();
+                return true;
+            } else {
+                animationTimer = ANIMATION_DELAY;
             }
         }
         
