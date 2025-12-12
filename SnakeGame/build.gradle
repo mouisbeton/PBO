@@ -1,0 +1,67 @@
+plugins {
+    id "java"
+}
+
+group = "com.snakegame"
+version = "1.0.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // LibGDX Core
+    implementation "com.badlogicgames.gdx:gdx:1.14.0"
+    
+    // LibGDX Desktop Backend (LWJGL3)
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:1.14.0"
+    implementation "com.badlogicgames.gdx:gdx-platform:1.14.0:natives-desktop"
+    
+    // JUnit for testing
+    testImplementation "junit:junit:4.13.2"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['tests']
+        }
+    }
+}
+
+test {
+    failOnNoDiscoveredTests = false
+}
+
+task runGame(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = "DesktopLauncher"
+}
+
+jar {
+    manifest {
+        attributes(
+            "Main-Class": "DesktopLauncher",
+            "Implementation-Title": "Snakes and Ladders Game",
+            "Implementation-Version": project.version
+        )
+    }
+    
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    archiveFileName = "SnakesAndLaddersGame.jar"
+}
